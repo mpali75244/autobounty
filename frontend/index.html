@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AutoBounty — Autonomous Bug Bounties</title>
+<link rel="icon" type="image/svg+xml" href="../icon/favicon.svg">
+<style>
+:root {
+  --bg: #0A0A0A;
+  --panel: #141414;
+  --panel2: #1C1C1C;
+  --border: #2A2A2A;
+  --text: #F2F2F2;
+  --muted: #9A9A9A;
+  --amber: #F5A623;
+  --green: #4CC38A;
+  --red: #E5484D;
+  --blue: #5B9BD5;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", Arial, sans-serif;
+  min-height: 100vh;
+}
+.wrap { max-width: 1080px; margin: 0 auto; padding: 24px 20px 80px; }
+header { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }
+header img.logo { height: 52px; border-radius: 10px; }
+.tagline { color: var(--muted); font-size: 13px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 24px; }
+.bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 20px; }
+.bar label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
+.bar input, .bar select {
+  background: var(--panel2); border: 1px solid var(--border); color: var(--text);
+  border-radius: 8px; padding: 8px 10px; font-size: 13px; min-width: 120px;
+}
+#contractAddr { width: 380px; }
+button {
+  background: var(--amber); color: #0A0A0A; font-weight: 700; border: none;
+  border-radius: 8px; padding: 9px 14px; font-size: 13px; cursor: pointer;
+}
+button:hover { filter: brightness(1.1); }
+button:disabled { opacity: .4; cursor: not-allowed; }
+button.ghost { background: var(--panel2); color: var(--text); border: 1px solid var(--border); }
+button.small { padding: 6px 10px; font-size: 12px; }
+#acct { font-size: 12px; color: var(--muted); }
+#acct b { color: var(--amber); font-family: Consolas, monospace; }
+h2 { font-size: 15px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin: 26px 0 12px; }
+.card { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 18px; margin-bottom: 14px; }
+.card .head { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.card h3 { font-size: 17px; }
+.card .meta { color: var(--muted); font-size: 12px; margin-top: 6px; line-height: 1.7; word-break: break-all; }
+.card a { color: var(--blue); text-decoration: none; }
+.badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+.b-open { background: #22303C; color: var(--blue); }
+.b-pr_submitted { background: #2B2417; color: var(--amber); }
+.b-merged { background: #232B22; color: var(--green); }
+.b-resolved { background: #1F2B22; color: var(--green); }
+.b-closed { background: #262626; color: var(--muted); }
+.sev { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+.s-critical { background: #3B1517; color: var(--red); }
+.s-high { background: #3B2B15; color: var(--amber); }
+.s-medium { background: #2E3117; color: #D0D65B; }
+.s-low { background: #1F2B22; color: var(--green); }
+.rules { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.rules span { font-size: 11px; background: var(--panel2); border: 1px solid var(--border); border-radius: 6px; padding: 3px 8px; color: var(--muted); }
+.reasoning {
+  margin-top: 12px; background: var(--panel2); border-left: 3px solid var(--amber);
+  border-radius: 0 8px 8px 0; padding: 10px 12px; font-size: 13px; color: #D8D8D8; line-height: 1.6;
+}
+.reasoning .who { color: var(--amber); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 4px; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+.form { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 18px; }
+.form .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+.form input { width: 100%; background: var(--panel2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 9px 10px; font-size: 13px; }
+.form .f label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 5px; }
+.form .row { display: flex; gap: 10px; align-items: center; margin-top: 14px; flex-wrap: wrap; }
+.form .sum { font-size: 12px; color: var(--muted); }
+.form .sum.bad { color: var(--red); }
+#status { position: fixed; left: 50%; transform: translateX(-50%); bottom: 24px; background: var(--panel2); border: 1px solid var(--border); color: var(--text); border-radius: 10px; padding: 10px 16px; font-size: 13px; display: none; max-width: 90vw; z-index: 50; }
+#status.err { border-color: var(--red); color: #FFB4B6; }
+.empty { color: var(--muted); font-size: 14px; padding: 30px; text-align: center; border: 1px dashed var(--border); border-radius: 14px; }
+.mono { font-family: Consolas, monospace; }
+dialog { background: var(--panel); color: var(--text); border: 1px solid var(--border); border-radius: 14px; padding: 22px; width: 440px; max-width: 92vw; }
+dialog::backdrop { background: rgba(0,0,0,.6); }
+dialog h3 { margin-bottom: 10px; }
+dialog textarea { width: 100%; min-height: 90px; background: var(--panel2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: 13px; margin-bottom: 12px; }
+.hint { color: var(--muted); font-size: 12px; margin-top: 8px; line-height: 1.6; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img class="logo" src="../icon/autobounty-lockup-horizontal.svg" alt="AutoBounty">
+    <button id="walletBtn" class="ghost">Connect Wallet</button>
+  </header>
+  <div class="tagline">Autonomous bug bounties &middot; AI validator consensus on GenLayer</div>
+
+  <div class="bar">
+    <div>
+      <label>Network</label>
+      <select id="chain">
+        <option value="localnet">Localnet (Studio)</option>
+        <option value="studionet">Studionet</option>
+        <option value="testnetAsimov">Testnet Asimov</option>
+      </select>
+    </div>
+    <div>
+      <label>Contract address</label>
+      <input id="contractAddr" class="mono" placeholder="0x..." spellcheck="false">
+    </div>
+    <div><label>&nbsp;</label><button id="loadBtn">Load</button></div>
+    <div style="flex:1"></div>
+    <div id="acct">not connected</div>
+  </div>
+
+  <h2>Create bounty</h2>
+  <div class="form">
+    <div class="grid">
+      <div class="f"><label>Bug title</label><input id="fTitle" placeholder="Crash on negative deposit"></div>
+      <div class="f"><label>Issue URL (github)</label><input id="fIssue" class="mono" placeholder="https://github.com/you/repo/issues/1"></div>
+      <div class="f"><label>Budget (GEN)</label><input id="fBudget" type="number" min="0.000001" step="any" value="10"></div>
+      <div class="f"><label>Critical %</label><input id="fCritical" type="number" min="1" max="99" value="50"></div>
+      <div class="f"><label>High %</label><input id="fHigh" type="number" min="1" max="99" value="30"></div>
+      <div class="f"><label>Medium %</label><input id="fMedium" type="number" min="1" max="99" value="15"></div>
+      <div class="f"><label>Low %</label><input id="fLow" type="number" min="1" max="99" value="5"></div>
+    </div>
+    <div class="row">
+      <button id="createBtn">Lock budget &amp; create bounty</button>
+      <span class="sum" id="sumLabel">sum = 100%</span>
+    </div>
+    <div class="hint">Rules are transparent and pre-committed on-chain: the AI validators do not invent the payout policy, they only classify the bug against it.</div>
+  </div>
+
+  <h2>Bounties</h2>
+  <div id="list"><div class="empty">Connect a wallet and load a contract to see bounties.</div></div>
+</div>
+
+<dialog id="appealDlg">
+  <h3>Appeal the AI decision</h3>
+  <textarea id="appealReason" placeholder="Explain why the assigned severity is unfair..."></textarea>
+  <div class="row" style="display:flex;gap:10px">
+    <button id="appealSend">Submit appeal</button>
+    <button id="appealCancel" class="ghost">Cancel</button>
+  </div>
+  <div class="hint">One appeal per hunter. The contract re-runs the full AI consensus with your reason added to the evidence. The new result is final.</div>
+</dialog>
+
+<div id="status"></div>
+
+<script type="module">
+const $ = id => document.getElementById(id);
+const AMBER = "#F5A623";
+const CHAINS = {
+  localnet: { rpc: "http://localhost:4000/api", faucet: "Studio faucet (built-in)" },
+  studionet: { rpc: "https://studio.genlayer.com/api", faucet: "Studio faucet (built-in)" },
+  testnetAsimov: { rpc: "https://testnet-sandbox.genlayer.com/api", faucet: "https://testnet-faucet.genlayer.foundation/" }
+};
+
+let sdk = null, chainsMod = null, client = null, contractAddress = "";
+let bounties = [];
+let appealId = null;
+
+function toast(msg, err = false) {
+  const s = $("status");
+  s.textContent = msg;
+  s.className = err ? "err" : "";
+  s.style.display = "block";
+  clearTimeout(s._t);
+  s._t = setTimeout(() => (s.style.display = "none"), err ? 9000 : 4500);
+}
+
+function persist() {
+  localStorage.setItem("ab_cfg", JSON.stringify({ chain: $("chain").value, addr: contractAddress, pk: localStorage.getItem("ab_pk") || "" }));
+}
+
+function parseGenToWei(v) {
+  const s = String(v).trim();
+  if (!/^\d*(\.\d*)?$/.test(s) || s === "" || s === ".") throw new Error("invalid GEN amount");
+  const neg = s.startsWith("-");
+  const [i, f = ""] = s.replace("-", "").split(".");
+  const frac = (f + "000000000000000000").slice(0, 18);
+  const wei = BigInt(i || "0") * 10n ** 18n + BigInt(frac || "0");
+  return neg ? -wei : wei;
+}
+
+function weiToGen(w) {
+  const neg = w < 0n;
+  let s = (neg ? -w : w).toString().padStart(19, "0");
+  const i = s.slice(0, -18), f = s.slice(-18).replace(/0+$/, "");
+  return (neg ? "-" : "") + i + (f ? "." + f.slice(0, 6) : "");
+}
+
+function short(a) { return a ? a.slice(0, 8) + "..." + a.slice(-6) : "?"; }
+function me() { return client && client.account ? String(client.account.address).toLowerCase() : null; }
+
+async function ensureClient() {
+  if (!sdk) {
+    sdk = await import("https://cdn.jsdelivr.net/npm/genlayer-js@latest/+esm");
+    try { chainsMod = await import("https://cdn.jsdelivr.net/npm/genlayer-js@latest/chains/+esm"); }
+    catch { chainsMod = null; }
+  }
+  const chainName = $("chain").value;
+  const chain = chainsMod && chainsMod[chainName] ? chainsMod[chainName] : { rpcUrl: CHAINS[chainName].rpc };
+  const opts = { chain };
+  if (client && client.account && $("chain").value === client._abChain) {
+    opts.account = client.account;
+  } else if (localStorage.getItem("ab_pk")) {
+    try { opts.account = sdk.createAccount(localStorage.getItem("ab_pk")); } catch { opts.account = sdk.createAccount(); }
+  } else {
+    opts.account = sdk.createAccount();
+    localStorage.setItem("ab_pk", opts.account.privateKey);
+  }
+  client = sdk.createClient(opts);
+  client._abChain = chainName;
+  persist();
+  $("acct").innerHTML = "wallet: <b>" + short(client.account.address) + "</b>";
+  $("walletBtn").textContent = "New wallet";
+}
+
+async function submitWrite(fnName, args, valueWei = 0n) {
+  const call = { address: contractAddress, functionName: fnName, args, ...(valueWei > 0n ? { value: valueWei } : {}) };
+  toast("Estimating fees for " + fnName + "...");
+  let fees;
+  try {
+    const est = await client.estimateTransactionFeesForWrite(call);
+    fees = { distribution: est.distribution, feeValue: est.feeValue };
+  } catch { fees = undefined; }
+  toast("Submitting " + fnName + "...");
+  const txId = await client.writeContract(fees ? { ...call, fees } : call);
+  toast("Waiting for consensus (" + short(txId) + ")...");
+  const tx = await client.waitForFinalization({ hash: txId });
+  if (sdk.isSuccessful && !sdk.isSuccessful(tx)) throw new Error("tx failed: " + (tx.txExecutionResultName || tx.statusName));
+  toast(fnName + " confirmed");
+  await refresh();
+}
+
+async function refresh() {
+  if (!client || !contractAddress) return;
+  const res = await client.readContract({ address: contractAddress, functionName: "get_all_bounties", args: [] });
+  bounties = Array.isArray(res) ? res : (res && res.result) || [];
+  render();
+}
+
+function render() {
+  const list = $("list");
+  if (!bounties.length) {
+    list.innerHTML = '<div class="empty">No bounties yet. Create the first one above.</div>';
+    return;
+  }
+  list.innerHTML = "";
+  const m = me();
+  for (const b of [...bounties].sort((x, y) => y.id - x.id)) {
+    const maintainer = String(b.maintainer).toLowerCase();
+    const hunter = String(b.hunter).toLowerCase();
+    const isMaintainer = m === maintainer;
+    const isHunter = m === hunter;
+    const card = document.createElement("div");
+    card.className = "card";
+    const rules = b.severity_rules || {};
+    const sevBadge = b.resolved_severity ? '<span class="sev s-' + b.resolved_severity + '">' + b.resolved_severity + " &middot; " + weiToGen(BigInt(b.payout_amount)) + " GEN</span>" : "";
+    const acts = [];
+    if (b.status === "open" && !isMaintainer) acts.push(['Submit PR', () => askPr(b.id)]);
+    if (b.status === "pr_submitted" && isMaintainer) acts.push(["Confirm merge", () => act("confirm_merge", [b.id])]);
+    if (b.status === "merged") acts.push(["Resolve with AI", () => act("resolve_bounty", [b.id])]);
+    if (b.status === "resolved" && isHunter && !Number(b.appeal_count)) acts.push(["Appeal", () => openAppeal(b.id)]);
+    if (b.status === "resolved" && isMaintainer) acts.push(["Close & reclaim", () => act("close_bounty", [b.id])]);
+    if (b.status === "open" && isMaintainer) acts.push(["Cancel", () => act("cancel_bounty", [b.id])]);
+    card.innerHTML =
+      '<div class="head"><h3>#' + b.id + " " + escapeHtml(b.title) + "</h3>" +
+      '<span><span class="badge b-' + b.status + '">' + b.status + "</span> " + sevBadge + "</span></div>" +
+      '<div class="meta">budget: <b>' + weiToGen(BigInt(b.total_budget)) + " GEN</b> &middot; maintainer: " + short(maintainer) +
+      (hunter !== "0x0000000000000000000000000000000000000000" ? " &middot; hunter: " + short(hunter) : "") +
+      "<br>issue: " + link(b.issue_url) + (b.pr_url ? " &middot; pr: " + link(b.pr_url) : "") + "</div>" +
+      '<div class="rules">' + Object.entries(rules).map(([k, v]) => "<span>" + k + " " + v + "%</span>").join("") + "</div>" +
+      (b.reasoning ? '<div class="reasoning"><div class="who">AI validators consensus &middot; confidence via equivalence principle</div>' + escapeHtml(b.reasoning) + (b.appeal_reason ? "<br><br><b>Appeal:</b> " + escapeHtml(b.appeal_reason) : "") + "</div>" : "") +
+      (acts.length ? '<div class="actions">' + acts.map((a, i) => '<button class="small" data-i="' + i + '">' + a[0] + "</button>").join("") + "</div>" : "");
+    card.querySelectorAll(".actions button").forEach((btn, i) => (btn.onclick = acts[i][1]));
+    list.appendChild(card);
+  }
+}
+
+function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+function link(u) { return u ? '<a href="' + escapeHtml(u) + '" target="_blank">' + escapeHtml(short(u.replace("https://", ""))) + "</a>" : "-"; }
+
+function askPr(id) {
+  const u = prompt("Pull request URL:");
+  if (u && u.includes("pull/")) act("submit_pr", [id, u.trim()]);
+  else if (u !== null) toast("URL must contain pull/", true);
+}
+
+function openAppeal(id) {
+  appealId = id;
+  $("appealReason").value = "";
+  $("appealDlg").showModal();
+}
+
+async function act(fnName, args, valueWei) {
+  try {
+    await submitWrite(fnName, args, valueWei);
+  } catch (e) {
+    console.error(e);
+    toast(String(e.message || e).slice(0, 300), true);
+  }
+}
+
+$("sumLabel").style.color = AMBER;
+["fCritical", "fHigh", "fMedium", "fLow"].forEach(id => $(id).addEventListener("input", () => {
+  const sum = ["fCritical", "fHigh", "fMedium", "fLow"].reduce((a, id) => a + Number($(id).value || 0), 0);
+  $("sumLabel").textContent = "sum = " + sum + "%";
+  $("sumLabel").className = "sum" + (sum === 100 ? "" : " bad");
+}));
+
+$("walletBtn").onclick = async () => {
+  try {
+    localStorage.removeItem("ab_pk");
+    client = null;
+    await ensureClient();
+    toast("New wallet connected");
+    await refresh();
+  } catch (e) { toast(String(e), true); }
+};
+
+$("loadBtn").onclick = async () => {
+  try {
+    contractAddress = $("contractAddr").value.trim();
+    if (!/^0x[0-9a-fA-F]{40}$/.test(contractAddress)) throw new Error("invalid contract address");
+    await ensureClient();
+    persist();
+    await refresh();
+    toast("Loaded " + bounties.length + " bounties");
+  } catch (e) { toast(String(e.message || e), true); }
+};
+
+$("createBtn").onclick = async () => {
+  try {
+    const rules = { critical: Number($("fCritical").value), high: Number($("fHigh").value), medium: Number($("fMedium").value), low: Number($("fLow").value) };
+    const sum = Object.values(rules).reduce((a, b) => a + b, 0);
+    if (sum !== 100) throw new Error("severity percentages must sum to 100");
+    if (!$("fTitle").value.trim()) throw new Error("title required");
+    if (!$("fIssue").value.includes("issues/")) throw new Error("issue URL must be a github issue");
+    const wei = parseGenToWei($("fBudget").value);
+    if (wei <= 0n) throw new Error("budget must be positive");
+    await ensureClient();
+    await submitWrite("create_bounty", [$("fTitle").value.trim(), $("fIssue").value.trim(), rules], wei);
+  } catch (e) { toast(String(e.message || e), true); }
+};
+
+$("appealSend").onclick = async () => {
+  const reason = $("appealReason").value.trim();
+  if (!reason) { toast("reason required", true); return; }
+  $("appealDlg").close();
+  act("appeal", [appealId, reason]);
+};
+$("appealCancel").onclick = () => $("appealDlg").close();
+
+$("chain").onchange = () => { client = null; $("acct").textContent = "not connected"; persist(); };
+
+(async function init() {
+  const cfg = JSON.parse(localStorage.getItem("ab_cfg") || "{}");
+  if (cfg.chain) $("chain").value = cfg.chain;
+  if (cfg.addr) $("contractAddr").value = cfg.addr;
+  try {
+    await ensureClient();
+    if (cfg.addr && /^0x[0-9a-fA-F]{40}$/.test(cfg.addr)) {
+      contractAddress = cfg.addr;
+      await refresh();
+    }
+  } catch (e) {
+    toast("SDK load failed: " + e + " — use the GenLayer Studio UI as fallback", true);
+  }
+})();
+</script>
+</body>
+</html>
