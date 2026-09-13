@@ -1,5 +1,7 @@
 <p align="center"><img src="icon/autobounty-lockup-horizontal-light.svg" alt="AutoBounty" width="420"></p>
 
+<p align="center"><a href="https://github.com/mpali75244/autobounty/actions/workflows/ci.yml"><img src="https://github.com/mpali75244/autobounty/actions/workflows/ci.yml/badge.svg" alt="CI"></a></p>
+
 <p align="center"><b>Autonomous bug bounties on GenLayer</b> — severity tier assigned by AI validator consensus from the merged PR, bounty released from escrow with no human in the loop.</p>
 
 <p align="center"><a href="#فارسی">فارسی</a> · <a href="#english">English</a></p>
@@ -126,7 +128,12 @@ Direct Mode (in-memory, no Docker) covers the whole lifecycle with mocked GitHub
 - Optimistic Democracy: https://docs.genlayer.com/understand-genlayer-protocol/core-concepts/optimistic-democracy
 - GenLayerJS: https://docs.genlayer.com/developers/decentralized-applications/genlayer-js
 
-### Known environment notes
+### Direct-mode compatibility fixes
 
-- `genlayer-test` (v0.29.2) ships two Windows/direct-mode fixes applied locally to site-packages: a `PermissionError` on the stdin temp-file (`loader.py`) and missing `ExecPromptTemplate` routing (`wasi_mock.py`). On Linux/Studio-mode these patches are unnecessary.
-- Docs mention `Response.status_code`; the current SDK (`genvm v0.2.16`, hash-pinned in the contract header) exposes `Response.status`.
+`tests/conftest.py` applies three portable fixes to `genlayer-test==0.29.2` at import time (no manual site-packages edits needed, works on Linux and Windows):
+
+1. Pins the GenVM SDK to `v0.2.16` — newer `0.3.0-rc*` releases don't ship the universal tarball that the test suite downloads.
+2. Routes `ExecPromptTemplate` (the `EqComparative` verdict call inside `gl.eq_principle.prompt_comparative`) to the LLM mock machinery in Direct Mode.
+3. On Windows, defers the stdin temp-file unlink that otherwise raises `PermissionError` (POSIX allows unlinking open files, Windows doesn't).
+
+> Docs mention `Response.status_code`; the actual SDK runtime (`genvm v0.2.16`, hash-pinned in the contract header) exposes `Response.status`.

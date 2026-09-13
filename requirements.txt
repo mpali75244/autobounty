@@ -1,2 +1,2 @@
-genlayer-test
+genlayer-test==0.29.2
 pytest
