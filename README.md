@@ -52,7 +52,7 @@ Maintainer                    Hunter                     GenLayer Consensus
 ## Project structure
 
 ```
-contracts/autobounty.py     Intelligent Contract (single Python file)
+contracts/AutoBounty.py     Intelligent Contract (single Python file)
 tests/test_autobounty.py    9 Direct-Mode tests (no network, no Docker, millisecond-fast)
 frontend/index.html         Single-file dApp built on GenLayerJS
 demo/README.md              4-minute live demo script with a real repo / issue / PR
@@ -66,7 +66,7 @@ pip install -r requirements.txt
 python -m pytest tests/ -v          # 9/9 passing — no Docker, no network
 ```
 
-Deploy `contracts/autobounty.py` with the `genlayer` CLI or through **GenLayer Studio**, then paste the deployed contract address into the frontend.
+Deploy `contracts/AutoBounty.py` with the `genlayer` CLI or through **GenLayer Studio**, then paste the deployed contract address into the frontend. For a scripted deployment against a running localnet/GLSim: `python scripts/deploy.py`.
 
 ## Contract API
 

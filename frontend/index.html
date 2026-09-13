@@ -216,7 +216,7 @@ async function ensureClient() {
   client._abChain = chainName;
   persist();
   $("acct").innerHTML = "wallet: <b>" + short(client.account.address) + "</b>";
-  $("walletBtn").textContent = "New wallet";
+  $("walletBtn").textContent = "Switch wallet";
 }
 
 async function submitWrite(fnName, args, valueWei = 0n) {
@@ -314,10 +314,13 @@ $("sumLabel").style.color = AMBER;
 
 $("walletBtn").onclick = async () => {
   try {
-    localStorage.removeItem("ab_pk");
+    const pk = prompt("Private key to import (leave empty to generate a new wallet):");
+    if (pk === null) return;
     client = null;
+    if (pk.trim()) localStorage.setItem("ab_pk", pk.trim());
+    else localStorage.removeItem("ab_pk");
     await ensureClient();
-    toast("New wallet connected");
+    toast("Wallet connected: " + short(client.account.address));
     await refresh();
   } catch (e) { toast(String(e), true); }
 };

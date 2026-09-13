@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-CONTRACT = str(Path(__file__).resolve().parent.parent / "contracts" / "autobounty.py")
+CONTRACT = str(Path(__file__).resolve().parent.parent / "contracts" / "AutoBounty.py")
 
 RULES = {"critical": 50, "high": 30, "medium": 15, "low": 5}
 BUDGET = 10**18
@@ -100,6 +100,24 @@ def test_resolve_pays_hunter_by_consensus(direct_vm, direct_deploy, direct_alice
     assert b["reasoning"] == "major feature broken"
     assert b["total_transferred"] == BUDGET * 30 // 100
     assert contract.get_bounty_count() == 1
+
+
+def test_resolve_handles_issue_url_fragment(direct_vm, direct_deploy, direct_alice, direct_bob):
+    contract = deploy_with_bounty(direct_vm, direct_deploy, direct_alice)
+    direct_vm.sender = direct_alice
+    direct_vm.value = BUDGET
+    contract.create_bounty("Fragment url bounty", ISSUE_URL + "#issue-5441070527", RULES)
+    direct_vm.value = 0
+    with direct_vm.prank(direct_bob):
+        contract.submit_pr(1, PR_URL)
+    with direct_vm.prank(direct_alice):
+        contract.confirm_merge(1)
+    with direct_vm.prank(direct_bob):
+        contract.resolve_bounty(1)
+    b = contract.get_bounty(1)
+    assert b["status"] == "resolved"
+    assert b["resolved_severity"] == "high"
+    assert b["payout_amount"] == BUDGET * 30 // 100
 
 
 def test_validator_accepts_same_severity_with_different_words(direct_vm, direct_deploy, direct_alice, direct_bob):

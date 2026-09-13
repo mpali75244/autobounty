@@ -60,6 +60,10 @@ class _Payee:
 
 def _github_owner_repo_number(url: str, keyword: str):
     u = url.strip()
+    for sep in ("#", "?"):
+        idx = u.find(sep)
+        if idx != -1:
+            u = u[:idx]
     for suffix in (".diff", ".patch"):
         if u.endswith(suffix):
             u = u[: -len(suffix)]
@@ -196,6 +200,7 @@ EQUIVALENCE_PRINCIPLE = (
 )
 
 
+@allow_storage
 class AutoBounty(gl.Contract):
     bounties: DynArray[Bounty]
 
