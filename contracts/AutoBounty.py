@@ -105,6 +105,8 @@ def _fetch_issue_data(issue_url: str) -> dict:
 def _fetch_pr_data(pr_url: str) -> dict:
     owner, repo, number = _github_owner_repo_number(pr_url, "pull")
     api = _http_get_json(f"https://api.github.com/repos/{owner}/{repo}/pulls/{number}")
+    if api.get("merged") is not True:
+        raise gl.vm.UserError("pull request is not merged")
     diff = _http_get_text(f"https://github.com/{owner}/{repo}/pull/{number}.diff")
     return {
         "title": str(api.get("title") or "")[:PR_BODY_MAX_CHARS],

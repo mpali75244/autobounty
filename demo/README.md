@@ -60,8 +60,8 @@ Note the two URLs — the contract fetches the issue text from the GitHub API an
 |---|---|---|---|
 | 1 | Maintainer | `Create bounty`: title, issue URL, budget `10 GEN`, rules `critical 50 / high 30 / medium 15 / low 5` | Budget is **escrowed** in the contract in the same tx; rules are pre-committed and transparent |
 | 2 | Hunter | `Submit PR` with the PR URL | Sender address becomes the hunter |
-| 3 | Maintainer | `Confirm merge` | Manual merge attestation for the MVP (webhook is post-MVP) |
-| 4 | Anyone | `Resolve with AI` | The core moment: validators independently fetch the issue + diff from GitHub, each runs its own LLM, and consensus (`gl.eq_principle.prompt_comparative`) accepts the result only when every validator reaches the **same severity tier**. The `reasoning` is stored on-chain |
+| 3 | Maintainer | `Confirm merge` | Manual attestation; the real gate is next |
+| 4 | Anyone | `Resolve with AI` | The contract first **verifies on-chain that the PR is actually merged via the GitHub API** (validators re-check it independently), then fetches the issue + diff: each validator runs its own LLM and consensus (`gl.eq_principle.prompt_comparative`) accepts the result only when every validator reaches the **same severity tier**. The `reasoning` is stored on-chain. Merge the PR on GitHub before this step, otherwise `resolve` reverts with "pull request is not merged" |
 | 5 | — | Inspect the bounty card | `resolved_severity`, payout = budget x tier %, the AI's one-paragraph justification — fully transparent |
 | 6 | Hunter | `Appeal` with a reason | Contract **re-runs the whole AI consensus** with the appeal reason added to the evidence. One appeal, result is final. If severity rises, the difference is paid automatically; if it drops, the leftover is reclaimable via `Close` |
 

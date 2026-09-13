@@ -12,7 +12,9 @@ PR_URL = "https://github.com/acme/app/pull/2"
 ISSUE_JSON = json.dumps(
     {"title": "Crash on negative deposit", "body": "Entering a negative deposit crashes the whole app"}
 )
-PR_JSON = json.dumps({"title": "Fix negative deposit crash", "body": "Adds input validation"})
+PR_JSON = json.dumps(
+    {"title": "Fix negative deposit crash", "body": "Adds input validation", "merged": True}
+)
 DIFF = (
     "diff --git a/app.py b/app.py\n"
     "--- a/app.py\n"
@@ -83,6 +85,20 @@ def test_submit_pr_guards(direct_vm, direct_deploy, direct_alice, direct_bob):
         contract.confirm_merge(0)
     with direct_vm.prank(direct_alice), direct_vm.expect_revert("no PR is submitted yet"):
         contract.confirm_merge(0)
+
+
+def test_resolve_rejects_unmerged_pr(direct_vm, direct_deploy, direct_alice, direct_bob):
+    contract = deploy_with_bounty(direct_vm, direct_deploy, direct_alice)
+    unmerged_json = json.dumps(
+        {"title": "Fix negative deposit crash", "body": "Adds input validation", "merged": False}
+    )
+    direct_vm.mock_web(r"api\.github\.com/repos/acme/app/pulls/3", {"status": 200, "body": unmerged_json})
+    with direct_vm.prank(direct_bob):
+        contract.submit_pr(0, "https://github.com/acme/app/pull/3")
+    with direct_vm.prank(direct_alice):
+        contract.confirm_merge(0)
+    with direct_vm.prank(direct_bob), direct_vm.expect_revert("pull request is not merged"):
+        contract.resolve_bounty(0)
 
 
 def test_resolve_pays_hunter_by_consensus(direct_vm, direct_deploy, direct_alice, direct_bob):

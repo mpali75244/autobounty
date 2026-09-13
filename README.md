@@ -75,7 +75,7 @@ Deploy `contracts/AutoBounty.py` with the `genlayer` CLI or through **GenLayer S
 | `create_bounty(title, issue_url, rules)` payable | Maintainer | Escrows `msg.value`, validates rules sum to 100 |
 | `submit_pr(bounty_id, pr_url)` | Hunter | Records PR URL from sender address |
 | `confirm_merge(bounty_id)` | Maintainer | Manual merge attestation (MVP scope) |
-| `resolve_bounty(bounty_id)` | Anyone | AI consensus → automatic tier-based payout |
+| `resolve_bounty(bounty_id)` | Anyone | Verifies PR is merged on GitHub → AI consensus → automatic tier-based payout |
 | `appeal(bounty_id, reason)` | Hunter, once | Full re-consensus including appeal reason; final |
 | `close_bounty` / `cancel_bounty` | Maintainer | Reclaim escrow leftovers |
 | `get_bounty` / `get_all_bounties` | view | Frontend reads |
